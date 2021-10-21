@@ -1,9 +1,9 @@
 const fs = require('fs');
 const linkTweet = require('../users/users.controller').linkTweet;
-
+const unlinkTweet = require('../users/users.controller').unlinkTweet;
 
 module.exports.getAll = getAll;
-// module.exports.getById = getById;
+module.exports.getById = getById;
 module.exports.create = create;
 module.exports.deleteById = deleteById;
 // module.exports.updateById = updateById;
@@ -16,8 +16,8 @@ function  getAll(req, res) {
     res.send(tweets);
 }
 
-function  getById(req, res) {
-    let tweets = fs.readFileSync("..data/tweets.json", "utf-8");
+function getById(req, res) {
+    let tweets = fs.readFileSync("./data/tweets.json", "utf-8");
     tweets = JSON.parse(tweets);
     const idTweet = req.params.id;
     const tweet = tweets.find(u => u.id == idTweet);
@@ -39,14 +39,12 @@ function create(req, res) {
             title: req.body.title,
             body: req.body.body
     };
+    if(!linkTweet(tweet, req.body.userId)){
+      return res.status(400).send("No se ha podido crear el tweet");
+    }
     tweets.push(tweet);
     fs.writeFileSync("./data/tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
-    if(linkTweet(tweet, req.body.userId)){
-      res.json(tweet);
-    }else{
-      res.status(400).send("No se ha podido crear el tweet");
-    }
-    
+    res.json(tweet);
 }
 
 
@@ -68,15 +66,19 @@ function create(req, res) {
 
 
 function  deleteById(req, res) {
-    const tweets = JSON.parse(fs.readFileSync("./tweets.json", "utf-8"));
+    const tweets = JSON.parse(fs.readFileSync("./data/tweets.json", "utf-8"));
     const idTweet = req.params.id;
     const idTweets = tweets.findIndex(u => u.id == idTweet);
     const tweetToDelete = tweets[idTweets];
-    if (idTweet != -1){
-        tweets.splice(idTweets, 1);
-        fs.writeFileSync("./tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
-        res.json(tweetToDelete);
-    }else {
-       
+    if (idTweets == -1){
+      return res.status(400).send("No se ha podido borrar el tweet");
     }
+
+    if(!unlinkTweet(tweetToDelete, tweetToDelete.userId)){
+      return res.status(400).send("No se ha podido borrar el tweet");
+    }
+
+    tweets.splice(idTweets, 1);
+    fs.writeFileSync("./data/tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
+    res.json(tweetToDelete);
 }

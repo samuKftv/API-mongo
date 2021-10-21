@@ -5,7 +5,7 @@ module.exports.getById = getById;
 module.exports.create = create;
 module.exports.deleteById = deleteById;
 module.exports.linkTweet = linkTweet;
-
+module.exports.unlinkTweet = unlinkTweet;
 
 function  getAll(req, res) {
     const users = fs.readFileSync("./data/users.json", "utf-8");
@@ -40,20 +40,23 @@ function create(req, res) {
 }
 
 
-function  updateById(req, res) { //No esta implementado con el FS
-    // const idUser = req.params.id;
-    // const user = users.find(u => u.id == idUser);
-    // if(user){
-    //     if(req.body.email){
-    //         user.email = req.body.email;
-    //     }else{
-          
-    //     }
-    //     res.json(user);
-    // }else{
-    //     res.sendStatus(400).send("Petición erronea");
-    // }
-    
+function updateById(req, res) { //No esta implementado con el FS
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+    const idUser = req.params.id;
+    const user = users.find(u => u.id == idUser);
+    if(!user){
+        return res.status(400).send("El usuario no existe")
+    }
+    if(typeof req.body.username !== "undefined"){
+        if(!changeUsername(user, users)){ //Si no he podido cambiar el usuario y sus posts devuelvo error
+            return res.status(400).send("No ha sido posible actualizar el usuario")
+        }
+    }
+    // req.body.username ? metodoloco : user.username;
+    req.body.name ? req.body.name : user.name;
+    req.body.email ? req.body.email: user.email;
+
+    res.json(user);
 }
 
 
@@ -83,7 +86,11 @@ function checkUsername(username, users) {
 
 function  linkTweet(tweet, username) {
     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+    
     const user = users.find(user => user.username == username);
+    if(typeof user === "undefined"){
+        return false;
+    }
     user.posts.push(tweet.id);
     try {
         fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
@@ -92,4 +99,23 @@ function  linkTweet(tweet, username) {
         return false;
     }
      
+}
+
+function  unlinkTweet(tweet, username) {
+    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+    const user = users.find(user => user.username == username);
+    user.posts = user.posts.filter(post => post != tweet.id);
+    try {
+        fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
+        return true;
+    } catch (error) {
+        return false;
+    }
+     
+}
+
+function changeUsername(user, users){
+    checkUsername(user, users); // Comprueba que el nuevo nombre de usuario no exista
+    editLinkedTweets(); //Edita todos los posts del usuario para que contengan el nuevo ID
+    return true; // Devuelve verdadero si todas las operaciones han finalizado con éxito.
 }
