@@ -1,21 +1,24 @@
 const fs = require('fs');
- 
+
 module.exports.getAll = getAll;
 module.exports.getById = getById;
 module.exports.create = create;
 module.exports.deleteById = deleteById;
+module.exports.updateById = updateById;
 module.exports.linkTweet = linkTweet;
 module.exports.unlinkTweet = unlinkTweet;
+
+const editLinkedTweets = require('../tweets/tweets.controller').editLinkedTweets;
 
 function  getAll(req, res) {
     const users = fs.readFileSync("./data/users.json", "utf-8");
     res.send(users);
 }
 
-function  getById(req, res) {
+function getById(req, res) {
     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
     const idUser = req.params.id;
-    const user = users.find(u => u.id == idUser);
+    const user = users.find(u => u.username == idUser);
     res.send(user);
     
 }
@@ -43,7 +46,7 @@ function create(req, res) {
 function updateById(req, res) { //No esta implementado con el FS
     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
     const idUser = req.params.id;
-    const user = users.find(u => u.id == idUser);
+    const user = users.find(u => u.username == idUser);
     if(!user){
         return res.status(400).send("El usuario no existe")
     }
@@ -115,7 +118,9 @@ function  unlinkTweet(tweet, username) {
 }
 
 function changeUsername(user, users){
-    checkUsername(user, users); // Comprueba que el nuevo nombre de usuario no exista
-    editLinkedTweets(); //Edita todos los posts del usuario para que contengan el nuevo ID
-    return true; // Devuelve verdadero si todas las operaciones han finalizado con éxito.
+    if(checkUsername(user, users) && editLinkedTweets(user.posts, user.username)){
+        return true // Devuelve verdadero si todas las operaciones han finalizado con éxito.
+    } 
+    
+    return false; // Error en algun método
 }

@@ -6,6 +6,7 @@ module.exports.getAll = getAll;
 module.exports.getById = getById;
 module.exports.create = create;
 module.exports.deleteById = deleteById;
+module.exports.editLinkedTweets = editLinkedTweets;
 // module.exports.updateById = updateById;
 
 
@@ -81,4 +82,18 @@ function  deleteById(req, res) {
     tweets.splice(idTweets, 1);
     fs.writeFileSync("./data/tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
     res.json(tweetToDelete);
+}
+
+function editLinkedTweets(arrayIdTweets, username) {
+  if(arrayIdTweets.length === 0){
+    return false;
+  }
+  const tweets = fs.readFileSync("./data/tweets.json", "utf-8");
+  const tweetsToEdit = tweets.filter(tweet => {
+    return arrayIdTweets.some(tweet.id);
+  })
+  tweetsToEdit.forEach(tweet => {
+    tweet.userId = username;
+  });
+  return true;
 }
