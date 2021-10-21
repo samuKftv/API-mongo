@@ -1,5 +1,5 @@
 const fs = require('fs');
- 
+const linkTweet = require('../users/users.controller').linkTweet;
 
 
 module.exports.getAll = getAll;
@@ -40,8 +40,12 @@ function create(req, res) {
             body: req.body.body
     };
     tweets.push(tweet);
-    fs.writeFileSync("./tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
-    res.json(tweet);
+    fs.writeFileSync("./data/tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
+    if(linkTweet(tweet, req.body.userId)){
+      res.json(tweet);
+    }else{
+      res.status(400).send("No se ha podido crear el tweet");
+    }
     
 }
 

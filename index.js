@@ -6,8 +6,8 @@ const usersRouter = require("./api/users");
 const tweetsRouter = require("./api/tweets");
 
 server.use(express.json());
-server.use('/api/users', usersRouter);
-server.use('/api/tweets', tweetsRouter);
+server.use('/users', usersRouter);
+server.use('/tweets', tweetsRouter);
 
 
 server.listen(5000, function(err) {
