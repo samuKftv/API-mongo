@@ -2,9 +2,24 @@ const mongoose = require("mongoose");
 
 var USERschema = mongoose.Schema ({
     name: String,
-    username: String,
+    username:{
+        type: String,
+        unique: true,
+        require: true,
+        minLength:4,
+        maxLenght:13
+    },
     email: String,
-    posts: Array
+    tweetfavorito:  {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'tweet'
+    },
+    tweets: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'tweet'
+        }
+    ]
 });
 
 var USER = mongoose.model("user", USERschema);
@@ -12,5 +27,4 @@ var USER = mongoose.model("user", USERschema);
 function validUser() {
     
 }
-
 module.exports = USER;

@@ -1,55 +1,61 @@
 const fs = require('fs');
-const linkTweet = require('../users/users.controller').linkTweet;
-const unlinkTweet = require('../users/users.controller').unlinkTweet;
+const TWEETSModel = require('./tweets.model');
+const USERSModel = require('../users/users.model')
+// const linkTweet = require('../users/users.controller').linkTweet;
+// const unlinkTweet = require('../users/users.controller').unlinkTweet;
 
 module.exports.getAll = getAll;
 module.exports.getById = getById;
 module.exports.create = create;
+module.exports.updateById = updateById;
 module.exports.deleteById = deleteById;
-module.exports.editLinkedTweets = editLinkedTweets;
-// module.exports.updateById = updateById;
+// module.exports.editLinkedTweets = editLinkedTweets;
+// 
 
 
 
 
 function  getAll(req, res) {
-    const tweets = fs.readFileSync("./data/tweets.json", "utf-8");
-    res.send(tweets);
+  TWEETSModel.find()
+  .then(response => {
+      res.json(response);
+  })
 }
 
 function getById(req, res) {
-    let tweets = fs.readFileSync("./data/tweets.json", "utf-8");
-    tweets = JSON.parse(tweets);
-    const idTweet = req.params.id;
-    const tweet = tweets.find(u => u.id == idTweet);
-    if (tweet) {
-      res.json(tweet);
-    }  else {
-      res.sendStatus(400).send("No se encuentra el tweet!");
-    }
-
+  TWEETSModel.findOne({id: req.params.id}).then(response => {
+    res.send(response);
+}).catch(err => {
+    res.status(400).send(err);
+});
     
 }
 
 
 function create(req, res) {
-    const tweets = JSON.parse(fs.readFileSync("./data/tweets.json", "utf-8"));
-    const tweet = {
-          id: tweets.length > 0 ? tweets[tweets.length-1].id + 1 : 1,
-          userId: req.body.userId,
-            title: req.body.title,
-            body: req.body.body
-    };
-    if(!linkTweet(tweet, req.body.userId)){
-      return res.status(400).send("No se ha podido crear el tweet");
+  let user;
+  USERSModel.findOne({username: req.body.userId}).then(response => {
+    user = response;
+    if(!response){
+      return res.status(400).send("El owner de este tweet no existia");
     }
-    tweets.push(tweet);
-    fs.writeFileSync("./data/tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
-    res.json(tweet);
+    TWEETSModel.create(req.body).then(response => {
+      user.tweets.push(response._id);
+      user.save().then(u =>{
+        res.json(response)
+      }).catch(err => {
+        return res.status(400).send(err);
+      });;
+    }).catch(err => {
+      return res.status(400).send(err);
+   });
+}).catch(err => {
+  return res.status(400).send(err);
+});
 }
 
 
-// function  updateById(req, res) { //No esta implementado
+function  updateById(req, res) { //No esta implementado
 //     // const idUser = req.params.id;
 //     // const user = users.find(u => u.id == idUser);
 //     // if(user){
@@ -62,26 +68,39 @@ function create(req, res) {
 //     // }else{
 //     //     res.sendStatus(400).send("Petición erronea");
 //     // }
+  TWEETSModel.findOneAndUpdate({id: req.params.id},  req.body, {new: true}).then(response =>{
+    res.json(response);
+  }).catch(err =>{
+    res.status(400).send(err);
+  })
     
-// }
+ }
 
 
 function  deleteById(req, res) {
-    const tweets = JSON.parse(fs.readFileSync("./data/tweets.json", "utf-8"));
-    const idTweet = req.params.id;
-    const idTweets = tweets.findIndex(u => u.id == idTweet);
-    const tweetToDelete = tweets[idTweets];
-    if (idTweets == -1){
-      return res.status(400).send("No se ha podido borrar el tweet");
-    }
+    // const tweets = JSON.parse(fs.readFileSync("./data/tweets.json", "utf-8"));
+    // const idTweet = req.params.id;
+    // const idTweets = tweets.findIndex(u => u.id == idTweet);
+    // const tweetToDelete = tweets[idTweets];
+    // if (idTweets == -1){
+    //   return res.status(400).send("No se ha podido borrar el tweet");
+    // }
 
-    if(!unlinkTweet(tweetToDelete, tweetToDelete.userId)){
-      return res.status(400).send("No se ha podido borrar el tweet");
-    }
+    // if(!unlinkTweet(tweetToDelete, tweetToDelete.userId)){
+    //   return res.status(400).send("No se ha podido borrar el tweet");
+    // }
 
-    tweets.splice(idTweets, 1);
-    fs.writeFileSync("./data/tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
-    res.json(tweetToDelete);
+    // tweets.splice(idTweets, 1);
+    // fs.writeFileSync("./data/tweets.json", JSON.stringify(tweets, null, 4), "utf-8");
+    // res.json(tweetToDelete);
+    TWEETSModel.findOneAndDelete({id: req.params.id})
+    .then(response => {
+        res.json(response);
+    }).catch(err => {
+        res.status(400).send(err);
+    })
+
+
 }
 
 function editLinkedTweets(arrayIdTweets, username) {

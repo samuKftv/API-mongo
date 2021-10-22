@@ -1,13 +1,14 @@
 const fs = require('fs');
 const USERSModel = require('./users.model');
+const TWEETSModel = require('../tweets/tweets.model');
 
 module.exports.getAll = getAll;
 module.exports.getById = getById;
 module.exports.create = create;
 module.exports.deleteById = deleteById;
 module.exports.updateById = updateById;
-module.exports.linkTweet = linkTweet;
-module.exports.unlinkTweet = unlinkTweet;
+// module.exports.linkTweet = linkTweet;
+// module.exports.unlinkTweet = unlinkTweet;
 
 const editLinkedTweets = require('../tweets/tweets.controller').editLinkedTweets;
 
@@ -19,40 +20,38 @@ function  getAll(req, res) {
 }
 
 function getById(req, res) {
-    USERSModel.find({username: req.params.username}).then(response => {
+    // USERSModel.findOne({username: req.params.username}).then(response => {
+    //     res.send(response);
+    // }).catch(err => {
+    //     res.status(400).send(err);
+    // });
+    USERSModel.findOne({username: req.params.username}).populate("tweets", "userId").then(response => {
         res.send(response);
     }).catch(err => {
         res.status(400).send(err);
     });
+
 }
 
 function create(req, res) {
-    /*
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    if(checkUsername(req.body.username, users)){
-        return res.status(400).send("El usuario ya existe")
-    }
-    let user = {
-          id: users.length > 0 ? users[users.length-1].id + 1 : 1,
-          name: req.body.name,
-          username: req.body.username,
-          email: req.body.email,
-          posts: []
-    };
-    users.push(user);
-    fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
-    res.json(user);
-    */
     USERSModel.create(req.body).then(response => {
         res.json(response);
-    })
+    }).catch(err=>{
+        res.status(400).status("Oye o estas creando un usuario ya existente o los parametros no son válidos")
+    });
 }
 
 
 function updateById(req, res) {
-    USERSModel.findOneAndUpdate({username: req.params.username},  req.body, {new: true})
+    USERSModel.findOneAndUpdate({username: req.params.username},  req.body)
         .then(response => {
-            res.json(response);
+            console.log(response)
+            TWEETSModel.updateMany({userId: response.username},{userId: req.body.username})
+            .then( response => {
+                res.json(response);
+            }).catch(err =>{
+                res.status(400).send(err);
+            });
         }).catch(err => {
             res.status(400).send(err);
         });
@@ -103,46 +102,46 @@ function  deleteById(req, res) {
 // Auxilars
 
 
-function checkUsername(username, users) {
+// function checkUsername(username, users) {
 
-    return users.some((user => user.username == username));
+//     return users.some((user => user.username == username));
 
-}
+// }
 
-function  linkTweet(tweet, username) {
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+// function  linkTweet(tweet, username) {
+//     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
     
-    const user = users.find(user => user.username == username);
-    if(typeof user === "undefined"){
-        return false;
-    }
-    user.posts.push(tweet.id);
-    try {
-        fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
-        return true;
-    } catch (error) {
-        return false;
-    }
+//     const user = users.find(user => user.username == username);
+//     if(typeof user === "undefined"){
+//         return false;
+//     }
+//     user.posts.push(tweet.id);
+//     try {
+//         fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
+//         return true;
+//     } catch (error) {
+//         return false;
+//     }
      
-}
+// }
 
-function  unlinkTweet(tweet, username) {
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    const user = users.find(user => user.username == username);
-    user.posts = user.posts.filter(post => post != tweet.id);
-    try {
-        fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
-        return true;
-    } catch (error) {
-        return false;
-    }
+// function  unlinkTweet(tweet, username) {
+//     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
+//     const user = users.find(user => user.username == username);
+//     user.posts = user.posts.filter(post => post != tweet.id);
+//     try {
+//         fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
+//         return true;
+//     } catch (error) {
+//         return false;
+//     }
      
-}
+// }
 
-function changeUsername(user, users){
-    if(checkUsername(user, users) && editLinkedTweets(user.posts, user.username)){
-        return true // Devuelve verdadero si todas las operaciones han finalizado con éxito.
-    } 
+// function changeUsername(user, users){
+//     if(checkUsername(user, users) && editLinkedTweets(user.posts, user.username)){
+//         return true // Devuelve verdadero si todas las operaciones han finalizado con éxito.
+//     } 
     
-    return false; // Error en algun método
-}
+//     return false; // Error en algun método
+// }
