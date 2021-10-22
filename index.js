@@ -1,6 +1,8 @@
 const express = require("express");
 const server = express();
+const mongoose = require("mongoose");
 
+mongoose.connect("mongodb://localhost/apiTwitter");
 //Rutas de los recursos.
 const usersRouter = require("./api/users");
 const tweetsRouter = require("./api/tweets");

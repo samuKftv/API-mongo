@@ -1,4 +1,5 @@
 const fs = require('fs');
+const USERSModel = require('./users.model');
 
 module.exports.getAll = getAll;
 module.exports.getById = getById;
@@ -11,20 +12,22 @@ module.exports.unlinkTweet = unlinkTweet;
 const editLinkedTweets = require('../tweets/tweets.controller').editLinkedTweets;
 
 function  getAll(req, res) {
-    const users = fs.readFileSync("./data/users.json", "utf-8");
-    res.send(users);
+    USERSModel.find()
+        .then(response => {
+            res.json(response);
+        })
 }
 
 function getById(req, res) {
-    const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
-    const idUser = req.params.id;
-    const user = users.find(u => u.username == idUser);
-    res.send(user);
-    
+    USERSModel.find({username: req.params.username}).then(response => {
+        res.send(response);
+    }).catch(err => {
+        res.status(400).send(err);
+    });
 }
 
-
 function create(req, res) {
+    /*
     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
     if(checkUsername(req.body.username, users)){
         return res.status(400).send("El usuario ya existe")
@@ -39,11 +42,22 @@ function create(req, res) {
     users.push(user);
     fs.writeFileSync("./data/users.json", JSON.stringify(users, null, 4), "utf-8");
     res.json(user);
-    
+    */
+    USERSModel.create(req.body).then(response => {
+        res.json(response);
+    })
 }
 
 
-function updateById(req, res) { //No esta implementado con el FS
+function updateById(req, res) {
+    USERSModel.findOneAndUpdate({username: req.params.username},  req.body, {new: true})
+        .then(response => {
+            res.json(response);
+        }).catch(err => {
+            res.status(400).send(err);
+        });
+
+    /*
     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
     const idUser = req.params.id;
     const user = users.find(u => u.username == idUser);
@@ -60,10 +74,18 @@ function updateById(req, res) { //No esta implementado con el FS
     req.body.email ? req.body.email: user.email;
 
     res.json(user);
+    */
 }
 
 
 function  deleteById(req, res) {
+    USERSModel.findOneAndDelete({username: req.params.username})
+        .then(response => {
+            res.json(response);
+        }).catch(err => {
+            res.status(400).send(err);
+        })
+    /*
     const users = JSON.parse(fs.readFileSync("./data/users.json", "utf-8"));
     const idUser = req.params.id;
     const idUsers = users.findIndex(u => u.id == idUser);
@@ -75,10 +97,10 @@ function  deleteById(req, res) {
     }else {
        
     }
+    */
 }
 
 // Auxilars
-
 
 
 function checkUsername(username, users) {
